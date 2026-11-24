@@ -98,11 +98,15 @@ class _MobileShellState extends State<MobileShell> {
             slivers: [
               SliverAppBar(
                 pinned: true,
-                expandedHeight: 112,
                 backgroundColor: c.bg,
-                leading: const Padding(
-                  padding: EdgeInsets.all(14),
-                  child: BurrowMark(size: 26),
+                titleSpacing: 16,
+                // Logo and name share one row, like the desktop header.
+                title: const Row(
+                  children: [
+                    BurrowMark(size: 26),
+                    SizedBox(width: 10),
+                    Flexible(child: Heading('Burrow', size: 22, maxLines: 1)),
+                  ],
                 ),
                 actions: [
                   IconButton(
@@ -116,13 +120,6 @@ class _MobileShellState extends State<MobileShell> {
                     icon: Icon(Icons.tune, color: c.muted, size: 20),
                   ),
                 ],
-                flexibleSpace: FlexibleSpaceBar(
-                  titlePadding: const EdgeInsetsDirectional.only(
-                    start: 20,
-                    bottom: 14,
-                  ),
-                  title: const Heading('Burrows', size: 24),
-                ),
               ),
               if (scope.app.hosts.isEmpty)
                 SliverFillRemaining(
