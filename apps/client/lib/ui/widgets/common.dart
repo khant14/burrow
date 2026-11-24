@@ -334,10 +334,17 @@ class HealthBadge extends StatelessWidget {
 
 /// Display heading in Fraunces, the Burrow voice.
 class Heading extends StatelessWidget {
-  const Heading(this.text, {super.key, this.size = 24, this.align});
+  const Heading(
+    this.text, {
+    super.key,
+    this.size = 24,
+    this.align,
+    this.maxLines,
+  });
   final String text;
   final double size;
   final TextAlign? align;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -345,6 +352,8 @@ class Heading extends StatelessWidget {
     child: Text(
       text,
       textAlign: align,
+      maxLines: maxLines,
+      overflow: maxLines == null ? null : TextOverflow.ellipsis,
       style: TextStyle(
         fontFamily: kDisplay,
         fontSize: size,
