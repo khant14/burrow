@@ -20,9 +20,11 @@ Burrow connects only to the servers you add, using SSH. To show whether a server
 - No accounts are needed to use the app.
 - No data is sold or shared with anyone.
 
-## Optional sync (not yet in the app)
+## Optional sync
 
-Burrow's sync server is self-hosted. When sync ships, your vault is encrypted on your device before upload, and the server only stores ciphertext. Anyone running a sync server is responsible for that server. You will be able to delete your sync account, and everything stored with it, from inside the app.
+Sync is off unless you turn it on in Settings, and Burrow works fully without it. It talks only to a sync server you choose, usually one you run yourself. Before anything is uploaded, hosts are encrypted on your device with a key derived from your sync password, so the server stores only ciphertext plus your email, item counts and timestamps. Your password never leaves the device. Private keys and passwords are not synced.
+
+Signing out stops syncing and keeps your hosts on the device. **Delete account** in Settings permanently deletes the account and everything stored with it on the server; hosts on your devices are kept. Anyone running a sync server is responsible for that server.
 
 ## Contact
 

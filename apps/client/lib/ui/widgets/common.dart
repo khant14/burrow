@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../state/app_state.dart';
 import '../../state/health.dart';
+import '../../state/sync.dart';
 import '../../state/workspace.dart';
 import 'art.dart';
 import '../theme.dart';
@@ -16,11 +17,13 @@ class Scope extends InheritedWidget {
     required this.app,
     required this.workspace,
     required this.health,
+    required this.sync,
     required super.child,
   });
   final AppState app;
   final Workspace workspace;
   final HealthMonitor health;
+  final SyncService sync;
 
   static Scope of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<Scope>()!;

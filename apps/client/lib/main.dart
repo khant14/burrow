@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 
 import 'src/rust/frb_generated.dart';
 import 'state/app_state.dart';
 import 'state/health.dart';
+import 'state/sync.dart';
 import 'state/workspace.dart';
 import 'ui/desktop/desktop_shell.dart';
 import 'ui/mobile/mobile_shell.dart';
@@ -13,8 +16,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await RustLib.init();
   final app = await AppState.load();
+  final sync = SyncService(app);
+  unawaited(sync.restore());
   runApp(
-    BurrowApp(app: app, workspace: Workspace(), health: HealthMonitor(app)),
+    BurrowApp(
+      app: app,
+      workspace: Workspace(),
+      health: HealthMonitor(app),
+      sync: sync,
+    ),
   );
 }
 
@@ -24,10 +34,12 @@ class BurrowApp extends StatelessWidget {
     required this.app,
     required this.workspace,
     required this.health,
+    required this.sync,
   });
   final AppState app;
   final Workspace workspace;
   final HealthMonitor health;
+  final SyncService sync;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +47,7 @@ class BurrowApp extends StatelessWidget {
       app: app,
       workspace: workspace,
       health: health,
+      sync: sync,
       child: ListenableBuilder(
         listenable: app,
         builder: (context, _) => MaterialApp(

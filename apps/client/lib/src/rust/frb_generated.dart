@@ -4,6 +4,7 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/ssh.dart';
+import 'api/sync.dart';
 
 import 'dart:async';
 import 'dart:convert';
@@ -69,7 +70,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 1450427244;
+  int get rustContentHash => -1642160524;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -103,6 +104,29 @@ abstract class RustLibApi extends BaseApi {
   });
 
   Future<void> crateApiSshInitApp();
+
+  Future<void> crateApiSyncSyncDeleteAccount({
+    required String server,
+    required String token,
+  });
+
+  Future<SyncAccount> crateApiSyncSyncLogin({
+    required String server,
+    required String email,
+    required String password,
+  });
+
+  Future<SyncAccount> crateApiSyncSyncRegister({
+    required String server,
+    required String email,
+    required String password,
+  });
+
+  Future<SyncRound> crateApiSyncSyncRound({
+    required SyncAccount account,
+    required PlatformInt64 cursor,
+    required List<SyncItem> local,
+  });
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_SshSession;
@@ -318,6 +342,149 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiSshInitAppConstMeta =>
       const TaskConstMeta(debugName: "init_app", argNames: []);
 
+  @override
+  Future<void> crateApiSyncSyncDeleteAccount({
+    required String server,
+    required String token,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(server, serializer);
+          sse_encode_String(token, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 7,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiSyncSyncDeleteAccountConstMeta,
+        argValues: [server, token],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiSyncSyncDeleteAccountConstMeta =>
+      const TaskConstMeta(
+        debugName: "sync_delete_account",
+        argNames: ["server", "token"],
+      );
+
+  @override
+  Future<SyncAccount> crateApiSyncSyncLogin({
+    required String server,
+    required String email,
+    required String password,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(server, serializer);
+          sse_encode_String(email, serializer);
+          sse_encode_String(password, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 8,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_sync_account,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiSyncSyncLoginConstMeta,
+        argValues: [server, email, password],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiSyncSyncLoginConstMeta => const TaskConstMeta(
+    debugName: "sync_login",
+    argNames: ["server", "email", "password"],
+  );
+
+  @override
+  Future<SyncAccount> crateApiSyncSyncRegister({
+    required String server,
+    required String email,
+    required String password,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(server, serializer);
+          sse_encode_String(email, serializer);
+          sse_encode_String(password, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 9,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_sync_account,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiSyncSyncRegisterConstMeta,
+        argValues: [server, email, password],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiSyncSyncRegisterConstMeta => const TaskConstMeta(
+    debugName: "sync_register",
+    argNames: ["server", "email", "password"],
+  );
+
+  @override
+  Future<SyncRound> crateApiSyncSyncRound({
+    required SyncAccount account,
+    required PlatformInt64 cursor,
+    required List<SyncItem> local,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_sync_account(account, serializer);
+          sse_encode_i_64(cursor, serializer);
+          sse_encode_list_sync_item(local, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 10,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_sync_round,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiSyncSyncRoundConstMeta,
+        argValues: [account, cursor, local],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiSyncSyncRoundConstMeta => const TaskConstMeta(
+    debugName: "sync_round",
+    argNames: ["account", "cursor", "local"],
+  );
+
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_SshSession => wire
       .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSshSession;
@@ -374,9 +541,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool dco_decode_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as bool;
+  }
+
+  @protected
   SshTarget dco_decode_box_autoadd_ssh_target(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_ssh_target(raw);
+  }
+
+  @protected
+  SyncAccount dco_decode_box_autoadd_sync_account(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_sync_account(raw);
+  }
+
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dcoDecodeI64(raw);
+  }
+
+  @protected
+  List<String> dco_decode_list_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_String).toList();
   }
 
   @protected
@@ -389,6 +580,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Uint8List;
+  }
+
+  @protected
+  List<SyncItem> dco_decode_list_sync_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_sync_item).toList();
   }
 
   @protected
@@ -411,6 +608,49 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       keyPath: dco_decode_opt_String(arr[4]),
       keyPem: dco_decode_opt_String(arr[5]),
       keyPassphrase: dco_decode_opt_String(arr[6]),
+    );
+  }
+
+  @protected
+  SyncAccount dco_decode_sync_account(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return SyncAccount(
+      server: dco_decode_String(arr[0]),
+      email: dco_decode_String(arr[1]),
+      token: dco_decode_String(arr[2]),
+      vaultKey: dco_decode_String(arr[3]),
+    );
+  }
+
+  @protected
+  SyncItem dco_decode_sync_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return SyncItem(
+      id: dco_decode_String(arr[0]),
+      kind: dco_decode_String(arr[1]),
+      data: dco_decode_String(arr[2]),
+      updatedAt: dco_decode_i_64(arr[3]),
+      deleted: dco_decode_bool(arr[4]),
+      dirty: dco_decode_bool(arr[5]),
+    );
+  }
+
+  @protected
+  SyncRound dco_decode_sync_round(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return SyncRound(
+      apply: dco_decode_list_sync_item(arr[0]),
+      pushed: dco_decode_list_String(arr[1]),
+      cursor: dco_decode_i_64(arr[2]),
     );
   }
 
@@ -503,9 +743,41 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool sse_decode_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint8() != 0;
+  }
+
+  @protected
   SshTarget sse_decode_box_autoadd_ssh_target(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_ssh_target(deserializer));
+  }
+
+  @protected
+  SyncAccount sse_decode_box_autoadd_sync_account(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_sync_account(deserializer));
+  }
+
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getPlatformInt64();
+  }
+
+  @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <String>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_String(deserializer));
+    }
+    return ans_;
   }
 
   @protected
@@ -520,6 +792,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
     return deserializer.buffer.getUint8List(len_);
+  }
+
+  @protected
+  List<SyncItem> sse_decode_list_sync_item(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <SyncItem>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_sync_item(deserializer));
+    }
+    return ans_;
   }
 
   @protected
@@ -555,6 +839,49 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  SyncAccount sse_decode_sync_account(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_server = sse_decode_String(deserializer);
+    var var_email = sse_decode_String(deserializer);
+    var var_token = sse_decode_String(deserializer);
+    var var_vaultKey = sse_decode_String(deserializer);
+    return SyncAccount(
+      server: var_server,
+      email: var_email,
+      token: var_token,
+      vaultKey: var_vaultKey,
+    );
+  }
+
+  @protected
+  SyncItem sse_decode_sync_item(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_kind = sse_decode_String(deserializer);
+    var var_data = sse_decode_String(deserializer);
+    var var_updatedAt = sse_decode_i_64(deserializer);
+    var var_deleted = sse_decode_bool(deserializer);
+    var var_dirty = sse_decode_bool(deserializer);
+    return SyncItem(
+      id: var_id,
+      kind: var_kind,
+      data: var_data,
+      updatedAt: var_updatedAt,
+      deleted: var_deleted,
+      dirty: var_dirty,
+    );
+  }
+
+  @protected
+  SyncRound sse_decode_sync_round(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_apply = sse_decode_list_sync_item(deserializer);
+    var var_pushed = sse_decode_list_String(deserializer);
+    var var_cursor = sse_decode_i_64(deserializer);
+    return SyncRound(apply: var_apply, pushed: var_pushed, cursor: var_cursor);
+  }
+
+  @protected
   int sse_decode_u_16(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint16();
@@ -587,12 +914,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   int sse_decode_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getInt32();
-  }
-
-  @protected
-  bool sse_decode_bool(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getUint8() != 0;
   }
 
   @protected
@@ -667,12 +988,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_bool(bool self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint8(self ? 1 : 0);
+  }
+
+  @protected
   void sse_encode_box_autoadd_ssh_target(
     SshTarget self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_ssh_target(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_sync_account(
+    SyncAccount self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_sync_account(self, serializer);
+  }
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putPlatformInt64(self);
+  }
+
+  @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_String(item, serializer);
+    }
   }
 
   @protected
@@ -698,6 +1049,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_sync_item(
+    List<SyncItem> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_sync_item(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
@@ -717,6 +1080,34 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_opt_String(self.keyPath, serializer);
     sse_encode_opt_String(self.keyPem, serializer);
     sse_encode_opt_String(self.keyPassphrase, serializer);
+  }
+
+  @protected
+  void sse_encode_sync_account(SyncAccount self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.server, serializer);
+    sse_encode_String(self.email, serializer);
+    sse_encode_String(self.token, serializer);
+    sse_encode_String(self.vaultKey, serializer);
+  }
+
+  @protected
+  void sse_encode_sync_item(SyncItem self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.kind, serializer);
+    sse_encode_String(self.data, serializer);
+    sse_encode_i_64(self.updatedAt, serializer);
+    sse_encode_bool(self.deleted, serializer);
+    sse_encode_bool(self.dirty, serializer);
+  }
+
+  @protected
+  void sse_encode_sync_round(SyncRound self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_sync_item(self.apply, serializer);
+    sse_encode_list_String(self.pushed, serializer);
+    sse_encode_i_64(self.cursor, serializer);
   }
 
   @protected
@@ -752,12 +1143,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_i_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putInt32(self);
-  }
-
-  @protected
-  void sse_encode_bool(bool self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putUint8(self ? 1 : 0);
   }
 }
 

@@ -6,3 +6,9 @@ members = ["crates/core", "crates/proto", "server", "apps/client/rust"]
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+
+# Key derivation is slow unoptimized; keep debug builds usable for sync sign-in.
+[profile.dev.package.argon2]
+opt-level = 3
+[profile.dev.package.blake2]
+opt-level = 3
