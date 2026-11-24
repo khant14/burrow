@@ -92,7 +92,7 @@ class _DesktopShellState extends State<DesktopShell> {
     } else if (key == PhysicalKeyboardKey.keyN) {
       editHost(context, compact: false);
     } else if (key == PhysicalKeyboardKey.keyB) {
-      setState(() => _sidebar = !_sidebar);
+      toggleSidebar();
     } else if (key == PhysicalKeyboardKey.comma) {
       showSettings(context, compact: false);
     }
@@ -204,6 +204,8 @@ class _DesktopShellState extends State<DesktopShell> {
     ),
   ];
 
+  void toggleSidebar() => setState(() => _sidebar = !_sidebar);
+
   Future<void> openPalette() async {
     if (_paletteOpen) return;
     _paletteOpen = true;
@@ -278,7 +280,7 @@ class _DesktopShellState extends State<DesktopShell> {
         title: _sidebar ? 'Hide the sidebar' : 'Show the sidebar',
         icon: Icons.view_sidebar_outlined,
         shortcut: '${modKey}B',
-        run: () => setState(() => _sidebar = !_sidebar),
+        run: () => toggleSidebar(),
       ),
       PaletteAction(
         section: 'Burrow',
@@ -407,6 +409,18 @@ class _Header extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Always visible, so a hidden sidebar is one click from coming back.
+          IconButton(
+            tooltip:
+                '${shell._sidebar ? 'Hide' : 'Show'} the sidebar  ${modKey}B',
+            onPressed: shell.toggleSidebar,
+            icon: Icon(
+              shell._sidebar ? Icons.menu_open : Icons.menu,
+              size: 19,
+              color: shell._sidebar ? c.text : c.muted,
+            ),
+          ),
+          const SizedBox(width: 6),
           const BurrowMark(size: 26),
           const SizedBox(width: 10),
           const Heading('Burrow', size: 19),
