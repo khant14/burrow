@@ -51,5 +51,13 @@ docker run -p 8080:8080 -v burrow:/data burrow-server
 ```
 Put it behind a TLS reverse proxy (Caddy, nginx) for real use.
 
+Then in the app open Settings > Sync, enter the server (`localhost:8080`, `192.168.1.5:8080`, or `https://sync.example.com`), and create an account or sign in. Sync is optional and end-to-end encrypted; your password never leaves the device and can't be reset. Signing out or deleting the account keeps hosts on the device. Hosts sync today; private keys and snippets stay local.
+
+Sync end-to-end test (real server, several app profiles):
+```sh
+cargo build -p rust_lib_burrow -p burrow-server
+cd apps/client && flutter test test/sync_e2e_test.dart
+```
+
 ## Status
 Early scaffold: single connection with password or key. Host key checking is not done yet, so do not use it on untrusted networks.

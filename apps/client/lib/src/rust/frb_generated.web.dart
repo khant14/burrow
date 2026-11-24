@@ -7,6 +7,7 @@
 // ignore_for_file: argument_type_not_assignable
 
 import 'api/ssh.dart';
+import 'api/sync.dart';
 
 import 'dart:async';
 import 'dart:convert';
@@ -57,7 +58,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String dco_decode_String(dynamic raw);
 
   @protected
+  bool dco_decode_bool(dynamic raw);
+
+  @protected
   SshTarget dco_decode_box_autoadd_ssh_target(dynamic raw);
+
+  @protected
+  SyncAccount dco_decode_box_autoadd_sync_account(dynamic raw);
+
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw);
+
+  @protected
+  List<String> dco_decode_list_String(dynamic raw);
 
   @protected
   List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
@@ -66,10 +79,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<SyncItem> dco_decode_list_sync_item(dynamic raw);
+
+  @protected
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
   SshTarget dco_decode_ssh_target(dynamic raw);
+
+  @protected
+  SyncAccount dco_decode_sync_account(dynamic raw);
+
+  @protected
+  SyncItem dco_decode_sync_item(dynamic raw);
+
+  @protected
+  SyncRound dco_decode_sync_round(dynamic raw);
 
   @protected
   int dco_decode_u_16(dynamic raw);
@@ -116,7 +141,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
+  bool sse_decode_bool(SseDeserializer deserializer);
+
+  @protected
   SshTarget sse_decode_box_autoadd_ssh_target(SseDeserializer deserializer);
+
+  @protected
+  SyncAccount sse_decode_box_autoadd_sync_account(SseDeserializer deserializer);
+
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
+
+  @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer);
 
   @protected
   List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
@@ -125,10 +162,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  List<SyncItem> sse_decode_list_sync_item(SseDeserializer deserializer);
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
   SshTarget sse_decode_ssh_target(SseDeserializer deserializer);
+
+  @protected
+  SyncAccount sse_decode_sync_account(SseDeserializer deserializer);
+
+  @protected
+  SyncItem sse_decode_sync_item(SseDeserializer deserializer);
+
+  @protected
+  SyncRound sse_decode_sync_round(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_16(SseDeserializer deserializer);
@@ -147,9 +196,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
-
-  @protected
-  bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
   void sse_encode_AnyhowException(
@@ -188,10 +234,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
+  void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_ssh_target(
     SshTarget self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_box_autoadd_sync_account(
+    SyncAccount self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer);
@@ -203,10 +264,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_sync_item(List<SyncItem> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
   void sse_encode_ssh_target(SshTarget self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_sync_account(SyncAccount self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_sync_item(SyncItem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_sync_round(SyncRound self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_16(int self, SseSerializer serializer);
@@ -225,9 +298,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_bool(bool self, SseSerializer serializer);
 }
 
 // Section: wire_class

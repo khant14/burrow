@@ -1,3 +1,4 @@
-//! Burrow core: SSH sessions, independent of any UI.
+//! Burrow core: SSH sessions and the sync client, independent of any UI.
 pub mod ssh;
+pub mod sync;
 pub use ssh::{Auth, ConnectOptions, Session};

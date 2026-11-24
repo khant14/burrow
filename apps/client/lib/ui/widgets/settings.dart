@@ -3,11 +3,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../theme.dart';
 import 'common.dart';
+import 'sync_panel.dart';
 
 const kPrivacyPolicyUrl =
     'https://github.com/khant14/burrow/blob/main/docs/PRIVACY.md';
 
-/// Appearance settings: app theme, terminal theme, font size.
+/// Settings: app theme, terminal theme, font size, sync.
 class SettingsPanel extends StatelessWidget {
   const SettingsPanel({super.key});
 
@@ -70,7 +71,10 @@ class SettingsPanel extends StatelessWidget {
               onChanged: app.setFontSize,
               semanticFormatterCallback: (v) => 'Font size ${v.round()} points',
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
+            _label(context, 'Sync'),
+            const SyncSection(),
+            const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 4),
             Align(
@@ -85,7 +89,7 @@ class SettingsPanel extends StatelessWidget {
               ),
             ),
             Text(
-              'Burrow collects nothing. Hosts and settings stay on this device.',
+              'Burrow collects nothing. Hosts stay on this device unless you turn on sync to a server you choose.',
               style: TextStyle(fontSize: 12, color: c.muted),
             ),
           ],
