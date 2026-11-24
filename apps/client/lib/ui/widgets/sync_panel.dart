@@ -94,20 +94,33 @@ String _lastSyncedText(DateTime? t) {
 
 Widget _card(BuildContext ctx, {required List<Widget> children}) {
   final c = ctx.c;
+  final screen = MediaQuery.sizeOf(ctx);
+  // Fits narrow windows and large text: never wider than the screen, and
+  // scrolls instead of overflowing when taller than it.
   return Material(
     type: MaterialType.transparency,
-    child: Container(
-      width: 380,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: c.raised,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: c.border),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: (screen.width - 32).clamp(0, 400),
+          maxHeight: (screen.height - 32).clamp(0, double.infinity),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: c.raised,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: c.border),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
+          ),
+        ),
       ),
     ),
   );
@@ -129,14 +142,16 @@ Future<bool> _confirm(
         const SizedBox(height: 8),
         Text(body, style: TextStyle(fontSize: 12.5, color: c.muted)),
         const SizedBox(height: 18),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+        OverflowBar(
+          alignment: MainAxisAlignment.end,
+          overflowAlignment: OverflowBarAlignment.end,
+          spacing: 8,
+          overflowSpacing: 8,
           children: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
               child: const Text('Cancel'),
             ),
-            const SizedBox(width: 8),
             FilledButton(
               style: danger
                   ? FilledButton.styleFrom(
@@ -301,21 +316,32 @@ class _SignInDialogState extends State<_SignInDialog> {
           const SizedBox(height: 10),
           Text(_error!, style: TextStyle(fontSize: 12, color: c.danger)),
         ],
-        const SizedBox(height: 18),
-        Row(
-          children: [
-            TextButton(
-              onPressed: _busy
-                  ? null
-                  : () => setState(() => _create = !_create),
-              child: Text(_create ? 'I have an account' : 'Create account'),
+        const SizedBox(height: 6),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
             ),
-            const Spacer(),
+            onPressed: _busy ? null : () => setState(() => _create = !_create),
+            child: Text(
+              _create
+                  ? 'Already have an account? Sign in'
+                  : 'New here? Create an account',
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        OverflowBar(
+          alignment: MainAxisAlignment.end,
+          overflowAlignment: OverflowBarAlignment.end,
+          spacing: 8,
+          overflowSpacing: 8,
+          children: [
             TextButton(
               onPressed: _busy ? null : () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
-            const SizedBox(width: 8),
             FilledButton(
               onPressed: _busy ? null : _submit,
               child: _busy
