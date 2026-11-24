@@ -159,49 +159,54 @@ class _MobileShellState extends State<MobileShell> {
                   ),
                 )
               else
-                SliverList.list(
-                  children: [
-                    for (final e in groups.entries) ...[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(22, 20, 22, 8),
-                        child: Text(
-                          e.key.isEmpty ? 'Unsorted' : e.key,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: c.muted,
+                // Side insets keep rows clear of a notch in landscape.
+                SliverSafeArea(
+                  top: false,
+                  bottom: false,
+                  sliver: SliverList.list(
+                    children: [
+                      for (final e in groups.entries) ...[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(22, 20, 22, 8),
+                          child: Text(
+                            e.key.isEmpty ? 'Unsorted' : e.key,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: c.muted,
+                            ),
                           ),
                         ),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: c.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: c.border),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Column(
-                          children: [
-                            for (var i = 0; i < e.value.length; i++) ...[
-                              if (i > 0) Divider(indent: 44, color: c.border),
-                              _HostTile(
-                                host: e.value[i],
-                                status: scope.workspace.statusFor(e.value[i]),
-                                onTap: () => _open(e.value[i]),
-                                onLongPress: () => editHost(
-                                  context,
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: c.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: c.border),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Column(
+                            children: [
+                              for (var i = 0; i < e.value.length; i++) ...[
+                                if (i > 0) Divider(indent: 44, color: c.border),
+                                _HostTile(
                                   host: e.value[i],
-                                  compact: true,
+                                  status: scope.workspace.statusFor(e.value[i]),
+                                  onTap: () => _open(e.value[i]),
+                                  onLongPress: () => editHost(
+                                    context,
+                                    host: e.value[i],
+                                    compact: true,
+                                  ),
                                 ),
-                              ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
+                      const SizedBox(height: 24),
                     ],
-                    const SizedBox(height: 24),
-                  ],
+                  ),
                 ),
             ],
           ),
