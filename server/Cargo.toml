@@ -1,0 +1,15 @@
+[package]
+name = "burrow-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+burrow-proto = { path = "../crates/proto" }
+axum = "0.8"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
+rusqlite = { version = "0.37", features = ["bundled"] }
+argon2 = "0.5"
+rand = "0.8"
+hex = "0.4"
+serde = { version = "1", features = ["derive"] }

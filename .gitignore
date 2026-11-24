@@ -1,0 +1,28 @@
+# Rust
+target/
+
+# Flutter / Dart
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+**/ephemeral/
+*.iml
+.idea/
+
+# Node
+node_modules/
+dist/
+
+# Local data and secrets
+*.db
+.env
+.env.*
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# OS / editor
+.DS_Store
+.vscode/
