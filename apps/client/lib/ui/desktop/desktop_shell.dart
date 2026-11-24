@@ -340,52 +340,57 @@ class _DesktopShellState extends State<DesktopShell> {
   Widget _build(BuildContext context) {
     final c = context.c;
     return Scaffold(
-      body: ListenableBuilder(
-        listenable: Listenable.merge([ws, app]),
-        builder: (context, _) => Column(
-          children: [
-            _Header(shell: this),
-            Expanded(
-              child: Row(
-                children: [
-                  AnimatedContainer(
-                    duration: kFast,
-                    curve: Curves.easeOut,
-                    width: _sidebar ? 264 : 0,
-                    child: ClipRect(
-                      child: OverflowBox(
-                        alignment: Alignment.centerLeft,
-                        minWidth: 264,
-                        maxWidth: 264,
-                        child: _Sidebar(shell: this),
+      // Wide layout also runs on phones in landscape and on tablets: keep clear of
+      // the status bar, notch and navigation bar, with the header colour behind them.
+      backgroundColor: c.sidebar,
+      body: SafeArea(
+        child: ListenableBuilder(
+          listenable: Listenable.merge([ws, app]),
+          builder: (context, _) => Column(
+            children: [
+              _Header(shell: this),
+              Expanded(
+                child: Row(
+                  children: [
+                    AnimatedContainer(
+                      duration: kFast,
+                      curve: Curves.easeOut,
+                      width: _sidebar ? 264 : 0,
+                      child: ClipRect(
+                        child: OverflowBox(
+                          alignment: Alignment.centerLeft,
+                          minWidth: 264,
+                          maxWidth: 264,
+                          child: _Sidebar(shell: this),
+                        ),
                       ),
                     ),
-                  ),
-                  if (_sidebar) VerticalDivider(width: 1, color: c.border),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        if (ws.tabs.isNotEmpty) _TabStrip(ws: ws),
-                        Expanded(
-                          child: ws.tabs.isEmpty
-                              ? _EmptyState(shell: this)
-                              : IndexedStack(
-                                  index: ws.activeIndex,
-                                  sizing: StackFit.expand,
-                                  children: [
-                                    for (var i = 0; i < ws.tabs.length; i++)
-                                      _TabBody(ws: ws, index: i),
-                                  ],
-                                ),
-                        ),
-                        if (ws.tabs.isNotEmpty) _StatusBar(ws: ws),
-                      ],
+                    if (_sidebar) VerticalDivider(width: 1, color: c.border),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          if (ws.tabs.isNotEmpty) _TabStrip(ws: ws),
+                          Expanded(
+                            child: ws.tabs.isEmpty
+                                ? _EmptyState(shell: this)
+                                : IndexedStack(
+                                    index: ws.activeIndex,
+                                    sizing: StackFit.expand,
+                                    children: [
+                                      for (var i = 0; i < ws.tabs.length; i++)
+                                        _TabBody(ws: ws, index: i),
+                                    ],
+                                  ),
+                          ),
+                          if (ws.tabs.isNotEmpty) _StatusBar(ws: ws),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
