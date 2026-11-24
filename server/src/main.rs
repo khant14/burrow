@@ -5,7 +5,7 @@ use argon2::password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, Pass
 use argon2::Argon2;
 use axum::extract::{Query, State};
 use axum::http::{HeaderMap, StatusCode};
-use axum::routing::{get, post};
+use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use burrow_proto::{Changes, Credentials, Item, LoginResponse, WrappedVaultKey};
 use rand::RngCore;
@@ -45,6 +45,7 @@ fn router(db: Db) -> Router {
         .route("/healthz", get(|| async { "ok" }))
         .route("/v1/auth/register", post(register))
         .route("/v1/auth/login", post(login))
+        .route("/v1/account", delete(delete_account))
         .route("/v1/vault/key", get(get_vault_key).put(put_vault_key))
         .route("/v1/items", get(pull).put(push))
         .with_state(db)
@@ -112,6 +113,18 @@ async fn put_vault_key(State(db): State<Db>, headers: HeaderMap, Json(k): Json<W
     let uid = user_from(&headers, &conn)?;
     conn.execute("UPDATE users SET vault_key = ?1, vault_nonce = ?2 WHERE id = ?3", params![k.ciphertext, k.nonce, uid])
         .map_err(err)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Deletes the account and everything stored for it (App Store guideline 5.1.1(v)).
+async fn delete_account(State(db): State<Db>, headers: HeaderMap) -> ApiResult<StatusCode> {
+    let mut conn = db.lock().unwrap();
+    let uid = user_from(&headers, &conn)?;
+    let tx = conn.transaction().map_err(err)?;
+    tx.execute("DELETE FROM items WHERE user_id = ?1", [uid]).map_err(err)?;
+    tx.execute("DELETE FROM tokens WHERE user_id = ?1", [uid]).map_err(err)?;
+    tx.execute("DELETE FROM users WHERE id = ?1", [uid]).map_err(err)?;
+    tx.commit().map_err(err)?;
     Ok(StatusCode::NO_CONTENT)
 }
 

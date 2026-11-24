@@ -7,6 +7,7 @@ import 'package:xterm/xterm.dart';
 import '../models/host.dart';
 import '../src/rust/api/ssh.dart';
 import 'app_state.dart';
+import 'keys.dart';
 
 enum SessionStatus { connecting, connected, closed, failed }
 
@@ -33,6 +34,9 @@ class TerminalSession extends ChangeNotifier {
     _set(SessionStatus.connecting);
     error = null;
     try {
+      final pem = host.auth == AuthMethod.key
+          ? await KeyStore.read(host.id)
+          : null;
       final ssh = await SshSession.connect(
         target: SshTarget(
           host: host.hostname,
@@ -42,6 +46,7 @@ class TerminalSession extends ChangeNotifier {
           keyPath: host.auth == AuthMethod.key
               ? expandHome(host.keyPath ?? '')
               : null,
+          keyPem: pem,
         ),
         cols: terminal.viewWidth,
         rows: terminal.viewHeight,
@@ -205,13 +210,23 @@ class Workspace extends ChangeNotifier {
 /// Turns low-level connection errors into something a person can act on.
 String friendlyError(String raw) {
   final r = raw.toLowerCase();
-  if (r.contains('refused')) return 'Nothing answered on that port. Is SSH running there?';
-  if (r.contains('authentication failed')) return "The server didn't accept those credentials.";
-  if (r.contains('could not load private key')) return "Couldn't read that private key. Check the path and passphrase.";
-  if (r.contains('timed out') || r.contains('unreachable') || r.contains('no route')) {
+  if (r.contains('refused')) {
+    return 'Nothing answered on that port. Is SSH running there?';
+  }
+  if (r.contains('authentication failed')) {
+    return "The server didn't accept those credentials.";
+  }
+  if (r.contains('could not load private key')) {
+    return "Couldn't read that private key. Check the path and passphrase.";
+  }
+  if (r.contains('timed out') ||
+      r.contains('unreachable') ||
+      r.contains('no route')) {
     return 'No way through to that host. Check the address or your network.';
   }
-  if (r.contains('failed to lookup') || r.contains('name or service not known') || r.contains('nodename')) {
+  if (r.contains('failed to lookup') ||
+      r.contains('name or service not known') ||
+      r.contains('nodename')) {
     return "Couldn't find that host name.";
   }
   return raw;

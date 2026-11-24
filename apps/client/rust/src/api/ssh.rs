@@ -14,6 +14,8 @@ pub struct SshTarget {
     /// Used when `key_path` is empty.
     pub password: Option<String>,
     pub key_path: Option<String>,
+    /// Private key contents. Takes precedence over `key_path`.
+    pub key_pem: Option<String>,
     pub key_passphrase: Option<String>,
 }
 
@@ -27,9 +29,13 @@ pub struct SshSession {
 impl SshSession {
     /// Connects and opens a shell. Call `output()` once to receive terminal bytes.
     pub async fn connect(target: SshTarget, cols: u32, rows: u32) -> Result<SshSession, String> {
-        let auth = match target.key_path.filter(|p| !p.is_empty()) {
-            Some(path) => Auth::Key { path, passphrase: target.key_passphrase },
-            None => Auth::Password { password: target.password.unwrap_or_default() },
+        let passphrase = target.key_passphrase.filter(|p| !p.is_empty());
+        let auth = if let Some(pem) = target.key_pem.filter(|p| !p.trim().is_empty()) {
+            Auth::KeyData { pem, passphrase }
+        } else if let Some(path) = target.key_path.filter(|p| !p.is_empty()) {
+            Auth::Key { path, passphrase }
+        } else {
+            Auth::Password { password: target.password.unwrap_or_default() }
         };
         let opts = ConnectOptions { host: target.host, port: target.port, username: target.username, auth, cols, rows };
         // Buffer output until Dart subscribes, so the login banner isn't lost.

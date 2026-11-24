@@ -414,6 +414,7 @@ impl SseDecode for crate::api::ssh::SshTarget {
         let mut var_username = <String>::sse_decode(deserializer);
         let mut var_password = <Option<String>>::sse_decode(deserializer);
         let mut var_keyPath = <Option<String>>::sse_decode(deserializer);
+        let mut var_keyPem = <Option<String>>::sse_decode(deserializer);
         let mut var_keyPassphrase = <Option<String>>::sse_decode(deserializer);
         return crate::api::ssh::SshTarget {
             host: var_host,
@@ -421,6 +422,7 @@ impl SseDecode for crate::api::ssh::SshTarget {
             username: var_username,
             password: var_password,
             key_path: var_keyPath,
+            key_pem: var_keyPem,
             key_passphrase: var_keyPassphrase,
         };
     }
@@ -530,6 +532,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::ssh::SshTarget {
             self.username.into_into_dart().into_dart(),
             self.password.into_into_dart().into_dart(),
             self.key_path.into_into_dart().into_dart(),
+            self.key_pem.into_into_dart().into_dart(),
             self.key_passphrase.into_into_dart().into_dart(),
         ]
         .into_dart()
@@ -609,6 +612,7 @@ impl SseEncode for crate::api::ssh::SshTarget {
         <String>::sse_encode(self.username, serializer);
         <Option<String>>::sse_encode(self.password, serializer);
         <Option<String>>::sse_encode(self.key_path, serializer);
+        <Option<String>>::sse_encode(self.key_pem, serializer);
         <Option<String>>::sse_encode(self.key_passphrase, serializer);
     }
 }

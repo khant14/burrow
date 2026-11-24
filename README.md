@@ -34,6 +34,8 @@ Needs Flutter 3.50+ (stable), Rust (rustup), and each platform's toolchain (Xcod
 cd apps/client
 flutter run -d macos        # or ios, android, windows, linux
 ```
+On Linux, also install `libsecret-1-dev` (the keychain for stored keys).
+
 Cargokit builds the Rust crate automatically. After changing `apps/client/rust/src/api`, regenerate bindings:
 ```sh
 cargo install flutter_rust_bridge_codegen --version 2.13.0

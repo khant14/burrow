@@ -1,7 +1,9 @@
+import 'package:file_selector/file_selector.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../models/host.dart';
 import '../../state/app_state.dart';
+import '../../state/keys.dart';
 import '../theme.dart';
 import 'common.dart';
 
@@ -96,19 +98,128 @@ class _HostEditorState extends State<HostEditor> {
       (widget.host?.jumpHost?.isNotEmpty ?? false) ||
       (widget.host?.forwards.isNotEmpty ?? false);
 
-  void _save() {
+  late final String _id = widget.host?.id ?? newId();
+
+  /// A key held in the keychain for this host (pasted or picked from a file).
+  bool _storedKey = false;
+
+  /// Key text picked or pasted in this editor, saved with the host.
+  String? _newPem;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.host != null) {
+      KeyStore.read(_id).then((k) {
+        if (mounted && k != null) setState(() => _storedKey = true);
+      });
+    }
+  }
+
+  Future<void> _pasteKey() async {
+    final ctrl = TextEditingController();
+    final pem = await showFadeDialog<String>(context, (ctx) {
+      final c = ctx.c;
+      return Material(
+        type: MaterialType.transparency,
+        child: Container(
+          width: 460,
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: c.raised,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: c.border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Heading('Paste a private key', size: 20),
+              const SizedBox(height: 4),
+              Text(
+                'Burrow keeps it in your keychain, on this device only.',
+                style: TextStyle(fontSize: 12.5, color: c.muted),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: ctrl,
+                autofocus: true,
+                minLines: 5,
+                maxLines: 8,
+                autocorrect: false,
+                enableSuggestions: false,
+                style: const TextStyle(fontFamily: kMono, fontSize: 11.5),
+                decoration: const InputDecoration(
+                  hintText: '-----BEGIN OPENSSH PRIVATE KEY-----',
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(ctx, ctrl.text),
+                    child: const Text('Use key'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+    _useKey(pem);
+  }
+
+  Future<void> _chooseKeyFile() async {
+    final f = await openFile(initialDirectory: expandHome('~/.ssh'));
+    if (f == null) return;
+    if (!isApple) {
+      setState(() => _key.text = f.path);
+      return;
+    }
+    _useKey(await f.readAsString());
+  }
+
+  void _useKey(String? pem) {
+    if (pem == null || !mounted) return;
+    if (!KeyStore.looksLikeKey(pem)) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(content: Text("That doesn't look like a private key.")),
+      );
+      return;
+    }
+    setState(() {
+      _newPem = pem;
+      _storedKey = true;
+    });
+  }
+
+  Future<void> _save() async {
     final hostname = _hostname.text.trim();
     if (hostname.isEmpty) return;
+    if (_auth == AuthMethod.key && _newPem != null) {
+      await KeyStore.write(_id, _newPem!);
+    } else if (_auth == AuthMethod.password && _storedKey) {
+      await KeyStore.delete(_id);
+    }
+    if (!mounted) return;
     widget.onSave(
       Host(
-        id: widget.host?.id ?? newId(),
+        id: _id,
         label: _label.text.trim().isEmpty ? hostname : _label.text.trim(),
         hostname: hostname,
         port: int.tryParse(_port.text) ?? 22,
         username: _user.text.trim(),
         group: _group.text.trim(),
         auth: _auth,
-        keyPath: _auth == AuthMethod.key ? _key.text.trim() : null,
+        keyPath: _auth == AuthMethod.key && !isApple ? _key.text.trim() : null,
         jumpHost: _jump.text.trim().isEmpty ? null : _jump.text.trim(),
         forwards: _forwards.text
             .split('\n')
@@ -116,6 +227,64 @@ class _HostEditorState extends State<HostEditor> {
             .where((s) => s.isNotEmpty)
             .toList(),
       ),
+    );
+  }
+
+  /// Apple apps can't read ~/.ssh, so the key is pasted or picked and kept in the keychain.
+  /// Elsewhere a path works, and the file picker fills it in.
+  Widget _keyField(BurrowColors c) {
+    if (!isApple) {
+      return TextField(
+        controller: _key,
+        decoration: InputDecoration(
+          labelText: 'Private key',
+          suffixIcon: IconButton(
+            tooltip: 'Choose key file',
+            icon: Icon(Icons.folder_open, size: 18, color: c.muted),
+            onPressed: _chooseKeyFile,
+          ),
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(
+              _storedKey ? Icons.key : Icons.key_off,
+              size: 18,
+              color: _storedKey ? c.success : c.muted,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                _storedKey
+                    ? 'Key saved in your keychain'
+                    : 'Add the private key for this host',
+                style: TextStyle(fontSize: 13, color: c.text),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            OutlinedButton.icon(
+              onPressed: _pasteKey,
+              icon: const Icon(Icons.content_paste, size: 16),
+              label: Text(_storedKey ? 'Replace key' : 'Paste key'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _chooseKeyFile,
+              icon: const Icon(Icons.folder_open, size: 16),
+              label: const Text('Choose file'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -241,12 +410,7 @@ class _HostEditorState extends State<HostEditor> {
                 child: _auth == AuthMethod.key
                     ? Padding(
                         padding: const EdgeInsets.only(top: 12),
-                        child: TextField(
-                          controller: _key,
-                          decoration: const InputDecoration(
-                            labelText: 'Private key',
-                          ),
-                        ),
+                        child: _keyField(c),
                       )
                     : Padding(
                         padding: const EdgeInsets.only(top: 10),

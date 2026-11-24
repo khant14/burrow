@@ -1,5 +1,6 @@
 import 'package:cupertino_ui/cupertino_ui.dart'
     show CupertinoPageTransitionsBuilder;
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:xterm/xterm.dart';
 
@@ -44,7 +45,7 @@ class BurrowColors extends ThemeExtension<BurrowColors> {
     border: Color(0xFF30281F),
     text: Color(0xFFF1E7D8),
     muted: Color(0xFFAD9D89),
-    faint: Color(0xFF706252),
+    faint: Color(0xFF9A8A77),
     accent: Color(0xFFF2A541),
     onAccent: Color(0xFF241505),
     clay: Color(0xFFC46A3C),
@@ -62,14 +63,14 @@ class BurrowColors extends ThemeExtension<BurrowColors> {
     hover: Color(0xFFE7DCCB),
     border: Color(0xFFE0D3C0),
     text: Color(0xFF2A2017),
-    muted: Color(0xFF7B6A57),
-    faint: Color(0xFFA9998A),
-    accent: Color(0xFFC9781A),
+    muted: Color(0xFF6A5A49),
+    faint: Color(0xFF726250),
+    accent: Color(0xFF965A0C),
     onAccent: Color(0xFFFFFAF2),
     clay: Color(0xFFB45A2E),
     soil: Color(0xFFE3D4BE),
-    success: Color(0xFF5E8A3A),
-    danger: Color(0xFFC0482F),
+    success: Color(0xFF4A7029),
+    danger: Color(0xFFA63A22),
   );
 
   @override
@@ -135,6 +136,10 @@ ThemeData buildTheme(Brightness b) {
       elevation: 0,
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
+      // Status bar icons follow the theme so they stay legible.
+      systemOverlayStyle: b == Brightness.dark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: c.raised,

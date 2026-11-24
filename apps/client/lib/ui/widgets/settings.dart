@@ -1,7 +1,11 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../theme.dart';
 import 'common.dart';
+
+const kPrivacyPolicyUrl =
+    'https://github.com/khant14/burrow/blob/main/docs/PRIVACY.md';
 
 /// Appearance settings: app theme, terminal theme, font size.
 class SettingsPanel extends StatelessWidget {
@@ -64,6 +68,25 @@ class SettingsPanel extends StatelessWidget {
               activeColor: c.accent,
               inactiveColor: c.border,
               onChanged: app.setFontSize,
+              semanticFormatterCallback: (v) => 'Font size ${v.round()} points',
+            ),
+            const SizedBox(height: 8),
+            const Divider(),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse(kPrivacyPolicyUrl),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(Icons.privacy_tip_outlined, size: 16),
+                label: const Text('Privacy policy'),
+              ),
+            ),
+            Text(
+              'Burrow collects nothing. Hosts and settings stay on this device.',
+              style: TextStyle(fontSize: 12, color: c.muted),
             ),
           ],
         );
@@ -98,67 +121,73 @@ class _Swatch extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = theme.theme;
     final c = context.c;
-    return GestureDetector(
-      onTap: onTap,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Column(
-          children: [
-            AnimatedContainer(
-              duration: kFast,
-              width: 92,
-              height: 56,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: t.background,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: selected ? c.accent : c.border,
-                  width: selected ? 1.5 : 1,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '${theme.name} terminal theme',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Column(
+            children: [
+              AnimatedContainer(
+                duration: kFast,
+                width: 92,
+                height: 56,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: t.background,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: selected ? c.accent : c.border,
+                    width: selected ? 1.5 : 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      r'$ ls',
+                      style: TextStyle(
+                        fontFamily: kMono,
+                        fontSize: 10,
+                        color: t.foreground,
+                      ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        for (final col in [
+                          t.red,
+                          t.green,
+                          t.yellow,
+                          t.blue,
+                          t.magenta,
+                          t.cyan,
+                        ])
+                          Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.only(right: 3),
+                            color: col,
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    r'$ ls',
-                    style: TextStyle(
-                      fontFamily: kMono,
-                      fontSize: 10,
-                      color: t.foreground,
-                    ),
-                  ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      for (final col in [
-                        t.red,
-                        t.green,
-                        t.yellow,
-                        t.blue,
-                        t.magenta,
-                        t.cyan,
-                      ])
-                        Container(
-                          width: 8,
-                          height: 8,
-                          margin: const EdgeInsets.only(right: 3),
-                          color: col,
-                        ),
-                    ],
-                  ),
-                ],
+              const SizedBox(height: 6),
+              Text(
+                theme.name,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: selected ? c.text : c.muted,
+                ),
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              theme.name,
-              style: TextStyle(
-                fontSize: 11.5,
-                color: selected ? c.text : c.muted,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

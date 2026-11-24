@@ -38,6 +38,9 @@ class SshTarget {
   /// Used when `key_path` is empty.
   final String? password;
   final String? keyPath;
+
+  /// Private key contents. Takes precedence over `key_path`.
+  final String? keyPem;
   final String? keyPassphrase;
 
   const SshTarget({
@@ -46,6 +49,7 @@ class SshTarget {
     required this.username,
     this.password,
     this.keyPath,
+    this.keyPem,
     this.keyPassphrase,
   });
 
@@ -56,6 +60,7 @@ class SshTarget {
       username.hashCode ^
       password.hashCode ^
       keyPath.hashCode ^
+      keyPem.hashCode ^
       keyPassphrase.hashCode;
 
   @override
@@ -68,5 +73,6 @@ class SshTarget {
           username == other.username &&
           password == other.password &&
           keyPath == other.keyPath &&
+          keyPem == other.keyPem &&
           keyPassphrase == other.keyPassphrase;
 }

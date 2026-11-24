@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{bail, Context, Result};
 use russh::client::{self, Handle};
-use russh::keys::{load_secret_key, PrivateKeyWithHashAlg};
+use russh::keys::{decode_secret_key, load_secret_key, PrivateKeyWithHashAlg};
 use russh::{ChannelMsg, Disconnect};
 use serde::Deserialize;
 use tokio::sync::mpsc;
@@ -12,6 +12,8 @@ use tokio::sync::mpsc;
 pub enum Auth {
     Password { password: String },
     Key { path: String, passphrase: Option<String> },
+    /// Key contents (OpenSSH or PEM), for platforms where apps can't read ~/.ssh.
+    KeyData { pem: String, passphrase: Option<String> },
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -68,9 +70,13 @@ impl Session {
                 .authenticate_password(&opts.username, password)
                 .await?
                 .success(),
-            Auth::Key { path, passphrase } => {
-                let key = load_secret_key(path, passphrase.as_deref())
-                    .context("could not load private key")?;
+            Auth::Key { .. } | Auth::KeyData { .. } => {
+                let key = match &opts.auth {
+                    Auth::Key { path, passphrase } => load_secret_key(path, passphrase.as_deref()),
+                    Auth::KeyData { pem, passphrase } => decode_secret_key(pem, passphrase.as_deref()),
+                    Auth::Password { .. } => unreachable!(),
+                }
+                .context("could not load private key")?;
                 let hash = handle.best_supported_rsa_hash().await?.flatten();
                 handle
                     .authenticate_publickey(

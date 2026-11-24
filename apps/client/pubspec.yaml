@@ -41,6 +41,9 @@ dependencies:
   xterm: ^4.0.0
   path_provider: ^2.1.6
   cupertino_ui: ^1.1.7
+  flutter_secure_storage: ^11.2.0
+  file_selector: ^1.1.0
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:

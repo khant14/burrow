@@ -23,9 +23,11 @@ class BurrowMark extends StatelessWidget {
   final bool tile;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(
-    size: Size.square(size),
-    painter: _MarkPainter(context.c, tile),
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: CustomPaint(
+      size: Size.square(size),
+      painter: _MarkPainter(context.c, tile),
+    ),
   );
 }
 
@@ -89,7 +91,19 @@ class _TunnelLoaderState extends State<TunnelLoader>
   late final _ctrl = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1800),
-  )..repeat();
+  );
+
+  /// Honors Reduce Motion: the tunnel holds still instead of looping.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _ctrl.stop();
+      _ctrl.value = 0.35;
+    } else if (!_ctrl.isAnimating) {
+      _ctrl.repeat();
+    }
+  }
 
   @override
   void dispose() {
@@ -98,10 +112,13 @@ class _TunnelLoaderState extends State<TunnelLoader>
   }
 
   @override
-  Widget build(BuildContext context) => RepaintBoundary(
-    child: CustomPaint(
-      size: Size.square(widget.size),
-      painter: _TunnelPainter(_ctrl, context.c),
+  Widget build(BuildContext context) => Semantics(
+    label: 'Connecting',
+    child: RepaintBoundary(
+      child: CustomPaint(
+        size: Size.square(widget.size),
+        painter: _TunnelPainter(_ctrl, context.c),
+      ),
     ),
   );
 }
@@ -163,9 +180,11 @@ class BurrowIllustration extends StatelessWidget {
   final double width;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(
-    size: Size(width, width * 0.5),
-    painter: _ScenePainter(scene, context.c),
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: CustomPaint(
+      size: Size(width, width * 0.5),
+      painter: _ScenePainter(scene, context.c),
+    ),
   );
 }
 
@@ -327,9 +346,11 @@ class Sparkline extends StatelessWidget {
   final double width, height;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(
-    size: Size(width, height),
-    painter: _SparkPainter(samples, context.c),
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: CustomPaint(
+      size: Size(width, height),
+      painter: _SparkPainter(samples, context.c),
+    ),
   );
 }
 

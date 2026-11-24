@@ -401,15 +401,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   SshTarget dco_decode_ssh_target(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return SshTarget(
       host: dco_decode_String(arr[0]),
       port: dco_decode_u_16(arr[1]),
       username: dco_decode_String(arr[2]),
       password: dco_decode_opt_String(arr[3]),
       keyPath: dco_decode_opt_String(arr[4]),
-      keyPassphrase: dco_decode_opt_String(arr[5]),
+      keyPem: dco_decode_opt_String(arr[5]),
+      keyPassphrase: dco_decode_opt_String(arr[6]),
     );
   }
 
@@ -540,6 +541,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_username = sse_decode_String(deserializer);
     var var_password = sse_decode_opt_String(deserializer);
     var var_keyPath = sse_decode_opt_String(deserializer);
+    var var_keyPem = sse_decode_opt_String(deserializer);
     var var_keyPassphrase = sse_decode_opt_String(deserializer);
     return SshTarget(
       host: var_host,
@@ -547,6 +549,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       username: var_username,
       password: var_password,
       keyPath: var_keyPath,
+      keyPem: var_keyPem,
       keyPassphrase: var_keyPassphrase,
     );
   }
@@ -712,6 +715,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.username, serializer);
     sse_encode_opt_String(self.password, serializer);
     sse_encode_opt_String(self.keyPath, serializer);
+    sse_encode_opt_String(self.keyPem, serializer);
     sse_encode_opt_String(self.keyPassphrase, serializer);
   }
 

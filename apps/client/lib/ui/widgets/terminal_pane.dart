@@ -49,7 +49,7 @@ class TerminalPane extends StatelessWidget {
                     focusNode: focusNode ?? session.focusNode,
                     // Desktop reads raw key events; the IME path drops or repeats keys there.
                     hardwareKeyboardOnly: isDesktop,
-                    onKeyEvent: (_, e) => isDesktop && isAppShortcut(e)
+                    onKeyEvent: (_, e) => isAppShortcut(e)
                         ? KeyEventResult.skipRemainingHandlers
                         : KeyEventResult.ignored,
                     autofocus: focused,

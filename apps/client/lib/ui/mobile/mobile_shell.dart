@@ -228,38 +228,54 @@ class _HostTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    return InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Padding(
-        // 56px rows keep targets thumb-sized.
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            StatusDot(status, size: 9),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    host.label,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: c.text,
+    final state = switch (status) {
+      SessionStatus.connected => 'connected',
+      SessionStatus.connecting => 'connecting',
+      SessionStatus.failed => 'connection failed',
+      SessionStatus.closed => 'closed',
+      null => null,
+    };
+    return Semantics(
+      button: true,
+      label: [host.label, host.address, ?state].join(', '),
+      onTapHint: 'Connect',
+      onLongPressHint: 'Edit host',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Padding(
+          // 56px rows keep targets thumb-sized.
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              StatusDot(status, size: 9),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      host.label,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: c.text,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    host.address,
-                    style: TextStyle(fontSize: 12.5, color: c.faint),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      host.address,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12.5, color: c.faint),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            HealthBadge(host.id),
-          ],
+              HealthBadge(host.id),
+            ],
+          ),
         ),
       ),
     );
@@ -290,7 +306,9 @@ class _MobileTerminalState extends State<MobileTerminal> {
           backgroundColor: bg,
           appBar: AppBar(
             backgroundColor: bg,
-            toolbarHeight: 48,
+            systemOverlayStyle: bg.computeLuminance() > 0.5
+                ? SystemUiOverlayStyle.dark
+                : SystemUiOverlayStyle.light,
             titleSpacing: 0,
             title: Row(
               children: [
@@ -379,9 +397,14 @@ class KeyBar extends StatelessWidget {
     }
 
     final keys = <Widget>[
-      _Key(label: 'esc', onTap: () => key(TerminalKey.escape)),
+      _Key(
+        label: 'esc',
+        semantic: 'Escape',
+        onTap: () => key(TerminalKey.escape),
+      ),
       _Key(
         label: 'ctrl',
+        semantic: 'Control',
         active: session.ctrlLatched,
         onTap: () {
           HapticFeedback.selectionClick();
@@ -389,28 +412,33 @@ class KeyBar extends StatelessWidget {
           onAnyKey?.call();
         },
       ),
-      _Key(label: 'tab', onTap: () => key(TerminalKey.tab)),
+      _Key(label: 'tab', semantic: 'Tab', onTap: () => key(TerminalKey.tab)),
       _Key(
         icon: Icons.keyboard_arrow_up,
+        semantic: 'Up arrow',
         onTap: () => key(TerminalKey.arrowUp),
       ),
       _Key(
         icon: Icons.keyboard_arrow_down,
+        semantic: 'Down arrow',
         onTap: () => key(TerminalKey.arrowDown),
       ),
       _Key(
         icon: Icons.keyboard_arrow_left,
+        semantic: 'Left arrow',
         onTap: () => key(TerminalKey.arrowLeft),
       ),
       _Key(
         icon: Icons.keyboard_arrow_right,
+        semantic: 'Right arrow',
         onTap: () => key(TerminalKey.arrowRight),
       ),
       for (final s in ['|', '/', '-', '~', ':', '*', r'$', '&'])
         _Key(label: s, mono: true, onTap: () => text(s)),
     ];
-    return Container(
-      height: 48,
+    // 56pt bar leaves 44pt keys, Apple's minimum touch target.
+    final bar = Container(
+      height: 56,
       decoration: BoxDecoration(
         color: c.sidebar,
         border: Border(top: BorderSide(color: c.border)),
@@ -421,6 +449,8 @@ class KeyBar extends StatelessWidget {
         children: keys,
       ),
     );
+    // Keys keep a fixed height, so cap how far large text grows inside them.
+    return MediaQuery.withClampedTextScaling(maxScaleFactor: 1.3, child: bar);
   }
 }
 
@@ -431,7 +461,9 @@ class _Key extends StatelessWidget {
     required this.onTap,
     this.active = false,
     this.mono = false,
+    this.semantic,
   });
+  final String? semantic;
   final String? label;
   final IconData? icon;
   final VoidCallback onTap;
@@ -440,31 +472,37 @@ class _Key extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: kFast,
-          constraints: const BoxConstraints(minWidth: 44),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: active ? c.accent : c.raised,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: active ? c.accent : c.border),
-          ),
-          child: icon != null
-              ? Icon(icon, size: 18, color: c.text)
-              : Text(
-                  label!,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontFamily: mono ? kMono : null,
-                    fontWeight: FontWeight.w500,
-                    color: active ? c.onAccent : c.text,
+    return Semantics(
+      button: true,
+      toggled: label == 'ctrl' ? active : null,
+      label: semantic ?? label,
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: kFast,
+            constraints: const BoxConstraints(minWidth: 44),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: active ? c.accent : c.raised,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: active ? c.accent : c.border),
+            ),
+            child: icon != null
+                ? Icon(icon, size: 18, color: c.text)
+                : Text(
+                    label!,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontFamily: mono ? kMono : null,
+                      fontWeight: FontWeight.w500,
+                      color: active ? c.onAccent : c.text,
+                    ),
                   ),
-                ),
+          ),
         ),
       ),
     );

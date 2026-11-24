@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/host.dart';
+import 'keys.dart';
 import '../models/ssh_config.dart';
 
 String newId() {
@@ -21,7 +22,7 @@ class AppState extends ChangeNotifier {
   final File? _file;
   final List<Host> hosts = [];
   final List<Snippet> snippets = [];
-  ThemeMode themeMode = ThemeMode.dark;
+  ThemeMode themeMode = ThemeMode.system;
   String terminalThemeId = 'loam';
   double fontSize = 13;
 
@@ -46,7 +47,7 @@ class AppState extends ChangeNotifier {
           ),
         );
         s.themeMode = ThemeMode.values.byName(
-          j['themeMode'] as String? ?? 'dark',
+          j['themeMode'] as String? ?? 'system',
         );
         s.terminalThemeId = j['terminalTheme'] as String? ?? s.terminalThemeId;
         s.fontSize = (j['fontSize'] as num?)?.toDouble() ?? s.fontSize;
@@ -107,20 +108,23 @@ class AppState extends ChangeNotifier {
 
   void removeHost(Host h) {
     hosts.removeWhere((e) => e.id == h.id);
+    KeyStore.delete(h.id);
     _save();
   }
 
   static String get sshConfigPath =>
       '${Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? ''}/.ssh/config';
 
+  /// The sandboxed Mac app can't see ~/.ssh, so it asks for the file instead.
   static bool get canImportSshConfig =>
-      (Platform.isMacOS || Platform.isLinux || Platform.isWindows) &&
-      File(sshConfigPath).existsSync();
+      Platform.isMacOS ||
+      ((Platform.isLinux || Platform.isWindows) &&
+          File(sshConfigPath).existsSync());
 
-  /// Returns how many new hosts were added.
-  int importSshConfig() {
+  /// Returns how many new hosts were added. Reads ~/.ssh/config unless [text] is given.
+  int importSshConfig([String? text]) {
     final parsed = parseSshConfig(
-      File(sshConfigPath).readAsStringSync(),
+      text ?? File(sshConfigPath).readAsStringSync(),
       newId: newId,
     );
     final known = hosts.map((h) => h.label).toSet();

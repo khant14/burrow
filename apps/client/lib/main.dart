@@ -44,6 +44,11 @@ class BurrowApp extends StatelessWidget {
           theme: buildTheme(Brightness.light),
           darkTheme: buildTheme(Brightness.dark),
           themeAnimationDuration: kFast,
+          // Follow Dynamic Type, capped where fixed layouts would clip.
+          builder: (context, child) => MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 2.0,
+            child: child!,
+          ),
           // Same app, two layouts: keyboard-first sidebar + tabs when wide, thumb-first list when narrow.
           home: LayoutBuilder(
             builder: (context, box) =>

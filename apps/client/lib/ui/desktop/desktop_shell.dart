@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../models/host.dart';
@@ -45,11 +48,41 @@ class _DesktopShellState extends State<DesktopShell> {
     super.dispose();
   }
 
-  /// Global shortcuts run before the terminal sees the key. ⌘ on macOS, Ctrl+Shift elsewhere.
+  /// Global shortcuts run before the terminal sees the key. ⌘ on Apple platforms, Ctrl+Shift elsewhere.
   bool _onKey(KeyEvent e) {
     if (e is! KeyDownEvent) return false;
     if (!isAppShortcut(e)) return false;
+    const digits = [
+      PhysicalKeyboardKey.digit1,
+      PhysicalKeyboardKey.digit2,
+      PhysicalKeyboardKey.digit3,
+      PhysicalKeyboardKey.digit4,
+      PhysicalKeyboardKey.digit5,
+      PhysicalKeyboardKey.digit6,
+      PhysicalKeyboardKey.digit7,
+      PhysicalKeyboardKey.digit8,
+      PhysicalKeyboardKey.digit9,
+    ];
     final key = e.physicalKey;
+    final tab = digits.indexOf(key);
+    if (tab >= 0) {
+      ws.focus(tab);
+    } else {
+      _command(key);
+    }
+    return true;
+  }
+
+  DateTime _lastAt = DateTime(0);
+  PhysicalKeyboardKey? _lastKey;
+
+  /// Runs an app command. The macOS menu bar and the key handler can both see
+  /// the same ⌘ press, so a repeat within a moment is dropped.
+  void _command(PhysicalKeyboardKey key) {
+    final now = DateTime.now();
+    if (key == _lastKey && now.difference(_lastAt).inMilliseconds < 150) return;
+    _lastKey = key;
+    _lastAt = now;
     if (key == PhysicalKeyboardKey.keyK || key == PhysicalKeyboardKey.keyT) {
       openPalette();
     } else if (key == PhysicalKeyboardKey.keyD) {
@@ -62,22 +95,114 @@ class _DesktopShellState extends State<DesktopShell> {
       setState(() => _sidebar = !_sidebar);
     } else if (key == PhysicalKeyboardKey.comma) {
       showSettings(context, compact: false);
-    } else {
-      const digits = [
-        PhysicalKeyboardKey.digit1,
-        PhysicalKeyboardKey.digit2,
-        PhysicalKeyboardKey.digit3,
-        PhysicalKeyboardKey.digit4,
-        PhysicalKeyboardKey.digit5,
-        PhysicalKeyboardKey.digit6,
-        PhysicalKeyboardKey.digit7,
-        PhysicalKeyboardKey.digit8,
-        PhysicalKeyboardKey.digit9,
-      ];
-      ws.focus(digits.indexOf(key));
     }
-    return true;
   }
+
+  PlatformMenuItem _item(
+    String label,
+    PhysicalKeyboardKey key,
+    LogicalKeyboardKey shortcut,
+  ) => PlatformMenuItem(
+    label: label,
+    shortcut: SingleActivator(shortcut, meta: true),
+    onSelected: () => _command(key),
+  );
+
+  /// Standard macOS menus, so the app behaves like a Mac app from the menu bar.
+  List<PlatformMenuItem> _menus() => [
+    PlatformMenu(
+      label: 'Burrow',
+      menus: [
+        const PlatformMenuItemGroup(
+          members: [
+            PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.about),
+          ],
+        ),
+        PlatformMenuItemGroup(
+          members: [
+            _item(
+              'Settings…',
+              PhysicalKeyboardKey.comma,
+              LogicalKeyboardKey.comma,
+            ),
+          ],
+        ),
+        const PlatformMenuItemGroup(
+          members: [
+            PlatformProvidedMenuItem(
+              type: PlatformProvidedMenuItemType.servicesSubmenu,
+            ),
+          ],
+        ),
+        const PlatformMenuItemGroup(
+          members: [
+            PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.hide),
+            PlatformProvidedMenuItem(
+              type: PlatformProvidedMenuItemType.hideOtherApplications,
+            ),
+            PlatformProvidedMenuItem(
+              type: PlatformProvidedMenuItemType.showAllApplications,
+            ),
+          ],
+        ),
+        const PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.quit),
+      ],
+    ),
+    PlatformMenu(
+      label: 'File',
+      menus: [
+        PlatformMenuItemGroup(
+          members: [
+            _item(
+              'New Host…',
+              PhysicalKeyboardKey.keyN,
+              LogicalKeyboardKey.keyN,
+            ),
+            _item('Go To…', PhysicalKeyboardKey.keyK, LogicalKeyboardKey.keyK),
+          ],
+        ),
+        PlatformMenuItemGroup(
+          members: [
+            _item(
+              'Split Pane',
+              PhysicalKeyboardKey.keyD,
+              LogicalKeyboardKey.keyD,
+            ),
+            _item(
+              'Close Pane',
+              PhysicalKeyboardKey.keyW,
+              LogicalKeyboardKey.keyW,
+            ),
+          ],
+        ),
+      ],
+    ),
+    PlatformMenu(
+      label: 'View',
+      menus: [
+        _item(
+          'Toggle Sidebar',
+          PhysicalKeyboardKey.keyB,
+          LogicalKeyboardKey.keyB,
+        ),
+        const PlatformProvidedMenuItem(
+          type: PlatformProvidedMenuItemType.toggleFullScreen,
+        ),
+      ],
+    ),
+    const PlatformMenu(
+      label: 'Window',
+      menus: [
+        PlatformProvidedMenuItem(
+          type: PlatformProvidedMenuItemType.minimizeWindow,
+        ),
+        PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.zoomWindow),
+        PlatformProvidedMenuItem(
+          type: PlatformProvidedMenuItemType.arrangeWindowsInFront,
+        ),
+      ],
+    ),
+  ];
 
   Future<void> openPalette() async {
     if (_paletteOpen) return;
@@ -182,8 +307,19 @@ class _DesktopShellState extends State<DesktopShell> {
     ];
   }
 
-  void _import() {
-    final n = app.importSshConfig();
+  Future<void> _import() async {
+    String? text;
+    if (isMac) {
+      final user = Platform.environment['USER'];
+      final f = await openFile(
+        initialDirectory: user == null ? null : '/Users/$user/.ssh',
+        confirmButtonText: 'Import',
+      );
+      if (f == null || !mounted) return;
+      text = await f.readAsString();
+      if (!mounted) return;
+    }
+    final n = app.importSshConfig(text);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -191,7 +327,8 @@ class _DesktopShellState extends State<DesktopShell> {
         content: Text(
           n == 0
               ? 'Nothing new in ~/.ssh/config. You already have them all.'
-              : 'Brought in $n host${n == 1 ? '' : 's'} from ~/.ssh/config',
+              : 'Brought in $n host${n == 1 ? '' : 's'} from ~/.ssh/config'
+                    '${isMac ? '. Add each key in the host settings.' : ''}',
         ),
       ),
     );
@@ -199,6 +336,11 @@ class _DesktopShellState extends State<DesktopShell> {
 
   @override
   Widget build(BuildContext context) {
+    final shell = _build(context);
+    return isMac ? PlatformMenuBar(menus: _menus(), child: shell) : shell;
+  }
+
+  Widget _build(BuildContext context) {
     final c = context.c;
     return Scaffold(
       body: ListenableBuilder(

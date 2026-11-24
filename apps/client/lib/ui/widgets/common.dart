@@ -31,13 +31,16 @@ class Scope extends InheritedWidget {
 }
 
 final bool isMac = Platform.isMacOS;
-final String modKey = isMac ? '⌘' : 'Ctrl+Shift+';
+
+/// iPad and Mac share the ⌘ shortcut layer.
+final bool isApple = Platform.isMacOS || Platform.isIOS;
+final String modKey = isApple ? '⌘' : 'Ctrl+Shift+';
 
 /// True while the app's shortcut modifier is held (⌘ on macOS, Ctrl+Shift elsewhere).
 /// Terminals ignore these keys so app shortcuts never leak into the shell.
 bool get appModifierPressed {
   final k = HardwareKeyboard.instance;
-  return isMac ? k.isMetaPressed : (k.isControlPressed && k.isShiftPressed);
+  return isApple ? k.isMetaPressed : (k.isControlPressed && k.isShiftPressed);
 }
 
 /// Matched by physical key, since Shift changes the logical key (Shift+, is "<").
@@ -78,17 +81,29 @@ class StatusDot extends StatelessWidget {
       SessionStatus.failed => c.danger,
       SessionStatus.closed || null => c.faint,
     };
-    return AnimatedContainer(
-      duration: kFast,
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: status == null ? Colors.transparent : color,
-        shape: BoxShape.circle,
-        border: status == null ? Border.all(color: c.faint, width: 1.2) : null,
-        boxShadow: status == SessionStatus.connected
-            ? [BoxShadow(color: color.withValues(alpha: 0.45), blurRadius: 6)]
-            : null,
+    final label = switch (status) {
+      SessionStatus.connected => 'Connected',
+      SessionStatus.connecting => 'Connecting',
+      SessionStatus.failed => 'Connection failed',
+      SessionStatus.closed => 'Closed',
+      null => 'Not connected',
+    };
+    return Semantics(
+      label: label,
+      child: AnimatedContainer(
+        duration: kFast,
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: status == null ? Colors.transparent : color,
+          shape: BoxShape.circle,
+          border: status == null
+              ? Border.all(color: c.faint, width: 1.2)
+              : null,
+          boxShadow: status == SessionStatus.connected
+              ? [BoxShadow(color: color.withValues(alpha: 0.45), blurRadius: 6)]
+              : null,
+        ),
       ),
     );
   }
@@ -122,26 +137,30 @@ class _HoverRowState extends State<HoverRow> {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onTap,
-        onSecondaryTapDown: widget.onSecondaryTapDown,
-        child: AnimatedContainer(
-          duration: kFast,
-          padding: widget.padding,
-          decoration: BoxDecoration(
-            color: widget.selected
-                ? c.hover
-                : (_hover
-                      ? c.hover.withValues(alpha: 0.6)
-                      : Colors.transparent),
-            borderRadius: BorderRadius.circular(widget.radius),
+    return Semantics(
+      button: widget.onTap != null,
+      selected: widget.selected,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          onSecondaryTapDown: widget.onSecondaryTapDown,
+          child: AnimatedContainer(
+            duration: kFast,
+            padding: widget.padding,
+            decoration: BoxDecoration(
+              color: widget.selected
+                  ? c.hover
+                  : (_hover
+                        ? c.hover.withValues(alpha: 0.6)
+                        : Colors.transparent),
+              borderRadius: BorderRadius.circular(widget.radius),
+            ),
+            child: widget.child,
           ),
-          child: widget.child,
         ),
       ),
     );
@@ -282,22 +301,28 @@ class HealthBadge extends StatelessWidget {
       builder: (context, _) {
         if (!h.checked(hostId)) return const SizedBox.shrink();
         final ms = h.latest(hostId);
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (spark && h.samples(hostId).whereType<int>().length > 1) ...[
-              Sparkline(h.samples(hostId)),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              ms == null ? 'down' : '$ms ms',
-              style: TextStyle(
-                fontFamily: kMono,
-                fontSize: 10.5,
-                color: ms == null ? c.danger : (ms > 150 ? c.accent : c.faint),
+        return Semantics(
+          label: ms == null ? 'Unreachable' : 'Latency $ms milliseconds',
+          excludeSemantics: true,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (spark && h.samples(hostId).whereType<int>().length > 1) ...[
+                Sparkline(h.samples(hostId)),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                ms == null ? 'down' : '$ms ms',
+                style: TextStyle(
+                  fontFamily: kMono,
+                  fontSize: 10.5,
+                  color: ms == null
+                      ? c.danger
+                      : (ms > 150 ? c.accent : c.faint),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -312,16 +337,19 @@ class Heading extends StatelessWidget {
   final TextAlign? align;
 
   @override
-  Widget build(BuildContext context) => Text(
-    text,
-    textAlign: align,
-    style: TextStyle(
-      fontFamily: kDisplay,
-      fontSize: size,
-      fontWeight: FontWeight.w600,
-      height: 1.15,
-      letterSpacing: -0.2,
-      color: context.c.text,
+  Widget build(BuildContext context) => Semantics(
+    header: true,
+    child: Text(
+      text,
+      textAlign: align,
+      style: TextStyle(
+        fontFamily: kDisplay,
+        fontSize: size,
+        fontWeight: FontWeight.w600,
+        height: 1.15,
+        letterSpacing: -0.2,
+        color: context.c.text,
+      ),
     ),
   );
 }
