@@ -199,7 +199,7 @@ class _ScenePainter extends CustomPainter {
     canvas.scale(size.width / 360);
     const s = Size(360, 180);
     final w = s.width, h = s.height;
-    final g = h * 0.36; // ground line
+    final g = h * 0.3; // ground line
     final dark = c.bg.computeLuminance() < 0.2;
     final rnd = math.Random(7);
 
@@ -313,27 +313,16 @@ class _ScenePainter extends CustomPainter {
         Paint()..color = (i.isEven ? c.faint : c.clay).withValues(alpha: 0.35),
       );
     }
-    final pebble = Color.lerp(c.soil, c.muted, dark ? 0.3 : 0.4)!;
-    for (final (fx, fy, r) in [
-      (0.12, 0.62, 5.0),
-      (0.3, 0.9, 4.0),
-      (0.86, 0.6, 6.0),
-      (0.62, 0.95, 3.5),
-      (0.95, 0.82, 4.5),
-    ]) {
-      final o = Offset(w * fx, h * fy);
-      canvas.drawOval(
-        Rect.fromCenter(center: o, width: r * 2.4, height: r * 1.6),
-        Paint()..color = pebble,
-      );
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: o.translate(-r * 0.3, -r * 0.25),
-          width: r,
-          height: r * 0.45,
-        ),
-        Paint()..color = c.text.withValues(alpha: dark ? 0.08 : 0.25),
-      );
+    // Sediment lines: short strokes that follow each stratum.
+    final sed = Paint()
+      ..strokeWidth = 1
+      ..strokeCap = StrokeCap.round
+      ..color = c.muted.withValues(alpha: dark ? 0.18 : 0.22);
+    for (var i = 0; i < 26; i++) {
+      final x = w * rnd.nextDouble();
+      final y = g + 10 + (h - g - 14) * rnd.nextDouble();
+      final len = 6 + 14 * rnd.nextDouble();
+      canvas.drawLine(Offset(x, y), Offset(x + len, y), sed);
     }
 
     // Grass tufts, with thin roots reaching into the soil.
@@ -380,40 +369,38 @@ class _ScenePainter extends CustomPainter {
         ..strokeWidth = 1.2,
     );
 
-    // Tunnels: a winding path from the entrance down to the chambers.
+    // Tunnels run level and straight, like a tidy network diagram:
+    // a shaft down from the entrance, then corridors to arched rooms.
     final hollow = dark
         ? Color.lerp(c.bg, Colors.black, 0.35)!
         : Color.lerp(c.bg, c.soil, 0.2)!;
-    final ex = w * 0.4;
-    final junction = Offset(ex + w * 0.03, h * 0.64);
-    final chambers = switch (scene) {
-      Scene.welcome => [
-        Offset(w * 0.22, h * 0.76),
-        Offset(w * 0.58, h * 0.64),
-        Offset(w * 0.8, h * 0.8),
-      ],
-      Scene.quiet => [Offset(w * 0.66, h * 0.78)],
-      Scene.empty => <Offset>[],
+    final ex = w * 0.42;
+    final l1 = h * 0.62, l2 = h * 0.86;
+    // (x, floor level) for each room.
+    final rooms = switch (scene) {
+      Scene.welcome => [(w * 0.2, l1), (w * 0.64, l1), (w * 0.82, l2)],
+      Scene.quiet => [(w * 0.7, l1)],
+      Scene.empty => <(double, double)>[],
     };
     final path = Path()
       ..moveTo(ex, g)
-      ..cubicTo(
-        ex,
-        g + h * 0.16,
-        ex - w * 0.07,
-        h * 0.56,
-        junction.dx,
-        junction.dy,
-      );
-    for (final ch in chambers) {
+      ..lineTo(ex, l1);
+    for (final (x, level) in rooms) {
+      path.moveTo(ex, l1);
+      if (level == l1) {
+        path.lineTo(x, l1);
+      } else {
+        final turn = x - w * 0.09;
+        path
+          ..lineTo(turn, l1)
+          ..lineTo(turn, level)
+          ..lineTo(x, level);
+      }
+    }
+    if (scene == Scene.empty) {
       path
-        ..moveTo(junction.dx, junction.dy)
-        ..quadraticBezierTo(
-          (junction.dx + ch.dx) / 2,
-          math.max(junction.dy, ch.dy) + 10,
-          ch.dx,
-          ch.dy,
-        );
+        ..moveTo(ex, l1)
+        ..lineTo(w * 0.62, l1);
     }
     Paint stroke(double width, Color color) => Paint()
       ..style = PaintingStyle.stroke
@@ -423,49 +410,56 @@ class _ScenePainter extends CustomPainter {
       ..color = color;
     canvas.drawPath(path, stroke(16, c.clay.withValues(alpha: 0.28)));
     canvas.drawPath(path, stroke(11, hollow));
-    // A faint floor highlight gives the tunnel some depth.
-    canvas.drawPath(
-      path.shift(const Offset(0, 2.5)),
-      stroke(2, c.clay.withValues(alpha: 0.18)),
-    );
 
-    // Chambers: warm, lantern-lit rooms, each holding a small server.
-    for (var i = 0; i < chambers.length; i++) {
-      final ch = chambers[i];
-      final room = Rect.fromCenter(center: ch, width: 64, height: 38);
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(room.inflate(3), const Radius.circular(22)),
-        Paint()..color = c.clay.withValues(alpha: 0.32),
+    // Rooms are arches, the same shape as the Burrow mark.
+    for (var i = 0; i < rooms.length; i++) {
+      final (x, level) = rooms[i];
+      final floor = level + 5.5;
+      final room = Rect.fromLTRB(x - 22, floor - 36, x + 22, floor);
+      final rim = Rect.fromLTRB(
+        room.left - 3,
+        room.top - 3,
+        room.right + 3,
+        floor + 3,
       );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(room, const Radius.circular(19)),
-        Paint()..color = hollow,
+      canvas.drawPath(
+        archPath(rim)..close(),
+        Paint()..color = c.clay.withValues(alpha: 0.38),
       );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(room, const Radius.circular(19)),
+      canvas.drawPath(archPath(room)..close(), Paint()..color = hollow);
+      canvas.drawPath(
+        archPath(room)..close(),
         Paint()
           ..shader = RadialGradient(
-            center: const Alignment(0, -0.3),
-            radius: 0.8,
+            center: const Alignment(0, -0.2),
+            radius: 0.75,
             colors: [
-              c.accent.withValues(alpha: dark ? 0.28 : 0.22),
+              c.accent.withValues(alpha: dark ? 0.3 : 0.24),
               c.accent.withValues(alpha: 0),
             ],
           ).createShader(room),
       );
+      // A small lamp hangs from the top of each room.
+      final lamp = Offset(x, room.top + 9);
+      canvas.drawLine(
+        Offset(x, room.top + 1),
+        lamp,
+        Paint()
+          ..color = c.muted.withValues(alpha: 0.5)
+          ..strokeWidth = 0.8,
+      );
+      canvas.drawCircle(lamp, 2, Paint()..color = c.accent);
       _server(
         canvas,
-        ch.translate(0, 3),
+        Offset(x, floor - 10),
         online: i == 0 || scene == Scene.quiet,
       );
     }
 
-    // An empty tunnel ends in a lantern, waiting.
-    if (scene == Scene.empty) _lantern(canvas, junction);
+    // An empty corridor ends in a lantern, waiting.
+    if (scene == Scene.empty) _lantern(canvas, Offset(w * 0.62, l1));
 
-    // Entrance: the Burrow arch on a small mound.
-    final mound = Rect.fromCenter(center: Offset(ex, g), width: 76, height: 22);
-    canvas.drawArc(mound, math.pi, math.pi, true, Paint()..color = c.soil);
+    // Entrance: the Burrow arch on the surface.
     final arch = Rect.fromLTWH(ex - 19, g - 30, 38, 30);
     canvas.drawPath(archPath(arch)..close(), Paint()..color = c.clay);
     canvas.drawPath(
@@ -508,7 +502,7 @@ class _ScenePainter extends CustomPainter {
             Color(0xFF000000),
             Color(0x00000000),
           ],
-          stops: [0, 0.1, 0.84, 1],
+          stops: [0, 0.1, 0.93, 1],
         ).createShader(all),
     );
     canvas.restore();
@@ -516,7 +510,7 @@ class _ScenePainter extends CustomPainter {
 
   /// A two-unit server rack with status lights.
   void _server(Canvas canvas, Offset at, {required bool online}) {
-    final body = Rect.fromCenter(center: at, width: 22, height: 18);
+    final body = Rect.fromCenter(center: at, width: 20, height: 18);
     canvas.drawRRect(
       RRect.fromRectAndRadius(body.translate(0, 1.5), const Radius.circular(3)),
       Paint()..color = Colors.black.withValues(alpha: 0.18),
