@@ -290,16 +290,11 @@ class _DesktopShellState extends State<DesktopShell> {
           app.themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light,
         ),
       ),
-      for (final t in BurrowTerminalTheme.all)
-        PaletteAction(
-          section: 'Terminal theme',
-          title: t.name,
-          icon: Icons.palette_outlined,
-          run: () => app.setTerminalTheme(t.id),
-        ),
       PaletteAction(
         section: 'Burrow',
         title: 'Settings',
+        // Terminal themes live only in Settings, where they can be previewed.
+        subtitle: 'Themes, terminal colors, font size',
         icon: Icons.tune,
         shortcut: '$modKey,',
         run: () => showSettings(context, compact: false),
